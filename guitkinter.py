@@ -1,9 +1,19 @@
-from optparse import Values
+
 from tkinter import *
-from tkinter import messagebox
-import psycopg2,tempfile,os,smtplib
+from tkinter import messagebox , simpledialog
+import psycopg2,tempfile,os,smtplib,subprocess
 
 #Fuctionality part\
+
+def logout():
+    root.destroy()
+    subprocess.run(['python', 'registration.py'])
+    # import registration
+    # execfile('registration.py')
+    
+
+
+
 
 # Function to update Listbox based on search
 def update_listbox(event):
@@ -105,11 +115,13 @@ def clearAll():
     billEntry.delete(0, END)
     textArea.delete(1.0, END)
 
-    textArea.insert(1.0, '\t   ***Medical Store***\n\n')
-    textArea.insert(END, '\tContact Number:0311-5552866\n\tEmail:mansoorpay@gmail.com\n')
-    textArea.insert(END, '========================================\n')
-    textArea.insert(END, '  Item\t\tQuantity\t\tPrice\n')
-    textArea.insert(END, '========================================\n')
+    textArea.insert(1.0,'\t   ***Medical Store***\n\n')
+    textArea.insert(END,'\tContact # :0311-5552866\n\tEmail:mansoorpay@gmail.com\n')
+    textArea.insert(END,'========================================\n')
+    textArea.insert(END,' Item \t     Unit \t  Quantity\t   Total \n')
+    textArea.insert(END,' Name \t     Price \t\t         Price \n')
+    textArea.insert(END,'========================================\n')
+
 
 
 def total():
@@ -121,7 +133,7 @@ def total():
 conn = psycopg2.connect(
     dbname="postgres",
     user="postgres",
-    password="Mansoor@9008",
+    password="12345678",
     host="localhost",
     port="5432"
     )
@@ -133,8 +145,11 @@ def submit():
     entered_name = nameEntry.get()
     quantity_Entry = phoneEntry.get()
     priceEntry = billEntry.get()
-    cursor.execute("INSERT INTO Projects(name, mquntity,mprice, mname, number) VALUES (%s, %s,  %s,  %s,  %s)" ,(entered_name, quantity_Entry, priceEntry,'try','0'))
+    cursor.execute("INSERT INTO Projects(name, mquntity,mprice) VALUES (%s, %s,  %s)" ,(entered_name, quantity_Entry, priceEntry))
     conn.commit()
+    nameEntry.delete(0,END)
+    phoneEntry.delete(0, END)
+    billEntry.delete(0, END)
     readitems()
 
 def readitems():
@@ -153,9 +168,16 @@ def on_select(event):
         item = projectsList.get(selectedIndex)
         query = "SELECT mprice FROM Projects WHERE name = %s"
         cursor.execute(query, (item,))
+
         price = cursor.fetchone()[0]
-        totalPrice = totalPrice + int(price)
-        textArea.insert(END, f'  {item}\t\t1\t\t{price}\n')
+        itemQuantity = simpledialog.askstring("Input", "Enter Quantity:", initialvalue="1")
+        if itemQuantity:
+        # Do something with the entered string 
+            # print("Entered string:", itemQuantity)
+            itemPrice = int(itemQuantity) * int(price)
+        
+        totalPrice = totalPrice + int(itemPrice)
+        textArea.insert(END, f' {item}\t\t{price}\t{itemQuantity}\t{itemPrice}\n')
         # print(f'Selected item is {item}')
     else:
         messagebox.INFO('Not Found','Unknown Error')
@@ -167,12 +189,15 @@ totalPrice = 0
 # GUI Part
 root = Tk()
 root.title("POS")
-
-
-root.geometry('1270x800')
+root.geometry('1200x630')
+root.resizable(False, False)
 #root.iconbitmap("icon.ico")
-headingLabel= Label(root,text="Offline Software Managment",font=('times new roman',30,'bold'),background='gray20',foreground='gold',bd=12,relief=GROOVE)
+headingLabel= Label(root,text="Medics Pharmacy",font=('times new roman',30,'bold'),background='gray20',foreground='gold',bd=12,relief=GROOVE)
 headingLabel.pack(fill=X,pady=5)
+# headingLabel.grid(row=0,column=0,padx=20,columnspan=7)
+# logoutButton= Button(root,text="Log Out",font=('arial',12,'bold'),bd=7,width=10,command=logout)
+# logoutButton.grid(row=0,column=7,padx=20)
+
 
 
 # Customers Details Frame
@@ -227,9 +252,10 @@ textArea = Text(billFrame,height=25,width=40,yscrollcommand=scrollbar.set)
 textArea.pack()
 scrollbar.config(command=textArea.yview)
 textArea.insert(1.0,'\t   ***Medical Store***\n\n')
-textArea.insert(END,'\tContact Number:0311-5552866\n\tEmail:mansoorpay@gmail.com\n')
+textArea.insert(END,'\tContact # :0311-5552866\n\tEmail:mansoorpay@gmail.com\n')
 textArea.insert(END,'========================================\n')
-textArea.insert(END,'  Item\t\tQuantity\t\tPrice\n')
+textArea.insert(END,' Item \t     Unit \t  Quantity\t   Total \n')
+textArea.insert(END,' Name \t     Price \t\t         Price \n')
 textArea.insert(END,'========================================\n')
 readitems()
 
@@ -244,7 +270,8 @@ totalbutton=Button(billmenuframe,text="Total",font=('arial',16,'bold'),backgroun
                    foreground='white',bd=5,width=8,pady=10,command=total)
 totalbutton.grid(row=0,column=0,pady=5,padx=10)
 
-billbutton=Button(billmenuframe,text="Bill",font=('arial',16,'bold'),background="gray20",foreground='white',bd=5,width=8,pady=10)
+billbutton=Button(billmenuframe,text="Log Out",font=('arial',16,'bold'),background="gray20",
+                  foreground='white',bd=5,width=8,pady=10,command=logout)
 billbutton.grid(row=1,column=0,pady=5,padx=10)
 
 emailbutton=Button(billmenuframe,text="Email",font=('arial',16,'bold'),background="gray20",
